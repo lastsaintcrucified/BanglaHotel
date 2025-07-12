@@ -37,6 +37,7 @@ export default function Employees() {
 	const fetchEmployees = async () => {
 		try {
 			const employeeData = await getEmployees();
+			console.log(employeeData);
 			setEmployees(employeeData);
 		} catch (error) {
 			console.error("Error fetching employees:", error);
@@ -47,27 +48,53 @@ export default function Employees() {
 
 	const [formData, setFormData] = useState({
 		name: "",
+		address: "",
+		bloodGroup: "",
+		email: "",
+		emergencyContact: "",
+		nid: "",
+		skills: [""],
+		performance: 0,
 		phone: "",
 		avatar: "",
 		position: "",
-		salary: "",
+		salary: 0,
 		joinDate: "",
-		totalLeaveAllowed: "12",
+		totalLeaveAllowed: 12,
+		leaves: [],
+		advances: [],
+		attendance: {},
 	});
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setFormData({ ...formData, [e.target.id]: e.target.value });
+		const { id, value, type } = e.target;
+		const finalValue = type === "number" ? parseFloat(value) : value;
+
+		setFormData((prev) => ({
+			...prev,
+			[id]: finalValue,
+		}));
 	};
 
 	const handleSubmit = async () => {
 		const {
 			name,
+			address,
+			bloodGroup,
+			email,
+			emergencyContact,
+			nid,
+			skills,
 			phone,
 			avatar,
 			position,
 			salary,
 			joinDate,
+			performance,
 			totalLeaveAllowed,
+			leaves,
+			attendance,
+			advances,
 		} = formData;
 
 		if (!name || !phone || !salary || !joinDate) {
@@ -78,16 +105,42 @@ export default function Employees() {
 		setLoading(true);
 		try {
 			const newEmployee = {
-				id: "", // Firestore will generate this
-				name,
-				phone,
+				address,
+				advances: [
+					{
+						amount: 0,
+						date: "", // or Date if you want to parse it
+						reason: "",
+						repaid: true,
+					},
+				],
+				attendance: {
+					absent: 0,
+					late: 0,
+					overtime: 0,
+					present: 0,
+				},
 				avatar,
+				bloodGroup,
+				email,
+				emergencyContact,
+				joinDate,
+				leaves: [
+					{
+						approved: false,
+						date: "",
+						days: 0,
+						reason: "",
+					},
+				],
+				name,
+				nid,
+				performance,
+				phone,
 				position,
-				salary: parseFloat(salary),
-				joinDate: new Date(joinDate),
-				leaves: [],
-				totalLeaveAllowed: parseInt(totalLeaveAllowed),
-				advances: [],
+				salary,
+				skills,
+				totalLeaveAllowed,
 			};
 
 			await addEmployee(newEmployee);
@@ -96,12 +149,22 @@ export default function Employees() {
 
 			setFormData({
 				name: "",
+				address: "",
+				bloodGroup: "",
+				performance: 0,
+				email: "",
+				emergencyContact: "",
+				nid: "",
+				skills: [""],
 				phone: "",
 				avatar: "",
 				position: "",
-				salary: "",
+				salary: 0,
 				joinDate: "",
-				totalLeaveAllowed: "12",
+				totalLeaveAllowed: 12,
+				leaves: [],
+				advances: [],
+				attendance: {},
 			});
 			setShowAddEmployee(!showAddEmployee);
 		} catch (error) {
@@ -158,6 +221,7 @@ export default function Employees() {
 							</DialogDescription>
 						</DialogHeader>
 						<div className='space-y-4 '>
+							{/* Name */}
 							<div>
 								<Label
 									className='mb-2'
@@ -172,7 +236,110 @@ export default function Employees() {
 									onChange={handleChange}
 								/>
 							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='email'
+								>
+									Email:
+								</Label>
+								<Input
+									id='email'
+									value={formData.email}
+									onChange={handleChange}
+								/>
+							</div>
 
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='address'
+								>
+									Address:
+								</Label>
+								<Input
+									id='address'
+									value={formData.address}
+									onChange={handleChange}
+								/>
+							</div>
+
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='nid'
+								>
+									NID:
+								</Label>
+								<Input
+									id='nid'
+									value={formData.nid}
+									onChange={handleChange}
+								/>
+							</div>
+
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='bloodGroup'
+								>
+									Blood Group:
+								</Label>
+								<Input
+									id='bloodGroup'
+									value={formData.bloodGroup}
+									onChange={handleChange}
+								/>
+							</div>
+
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='emergencyContact'
+								>
+									Emergency Contact:
+								</Label>
+								<Input
+									id='emergencyContact'
+									value={formData.emergencyContact}
+									onChange={handleChange}
+								/>
+							</div>
+
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='performance'
+								>
+									Performance (0–5):
+								</Label>
+								<Input
+									id='performance'
+									type='number'
+									step='0.1'
+									value={formData.performance}
+									onChange={handleChange}
+								/>
+							</div>
+
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='skills'
+								>
+									Skills (comma separated):
+								</Label>
+								<Input
+									id='skills'
+									value={formData.skills.join(", ")}
+									onChange={(e) =>
+										setFormData((prev) => ({
+											...prev,
+											skills: e.target.value.split(",").map((s) => s.trim()),
+										}))
+									}
+								/>
+							</div>
 							<div>
 								<Label
 									className='mb-2'
@@ -353,8 +520,7 @@ export default function Employees() {
 										<p className='text-gray-600'>Join Date</p>
 										<p className='font-semibold'>
 											{" "}
-											{employee.joinDate?.toDate?.().toLocaleDateString() ??
-												"N/A"}
+											{employee.joinDate ?? "N/A"}
 										</p>
 									</div>
 								</div>

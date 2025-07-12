@@ -43,13 +43,30 @@ import {
 	getProductionEntries,
 } from "@/lib/firestore";
 import Image from "next/image";
+type Ingredient = {
+	productName: string;
+	amountPerUnit: number;
+	unit: string;
+};
 
+type NutritionalInfo = {
+	calories: number;
+	carbs: number;
+	fat: number;
+	protein: number;
+};
 export interface SnackProduced {
-	snackName: string;
-	quantity: number;
-	revenue: number;
-	cost: number;
+	id?: string;
+	name: string;
+	description: string;
+	category: string;
+	costPerUnit: number;
 	sellingPrice: number;
+	popularity: number;
+	difficulty: "Easy" | "Medium" | "Hard";
+	preparationTime: number;
+	recipe: Ingredient[];
+	nutritionalInfo: NutritionalInfo;
 }
 
 interface IngredientUsed {
@@ -70,17 +87,25 @@ interface Expense {
 	category: string;
 	amount: number;
 }
-
+type SnackProductionEntry = {
+	snackName: string;
+	quantity: number;
+	cost: number;
+	revenue: number;
+};
 export interface ProductionEntry {
-	id: string;
-	date: string;
-	snacksProduced?: SnackProduced[];
-	totalRevenue?: number;
-	totalCost?: number;
-	netProfit?: number;
-	profitMargin?: number;
-	employeesPresent?: string[];
-	notes?: string;
+	id?: string; // Firestore document ID
+	date: string; // e.g. "2025-06-14"
+	customerCount: number;
+	netProfit: number;
+	totalCost: number;
+	totalRevenue: number;
+
+	weather: string;
+	notes: string;
+
+	employeesPresent: string[]; // names of employees
+	snacksProduced: SnackProductionEntry[];
 }
 
 export default function DayReportsComplete() {
@@ -134,7 +159,7 @@ export default function DayReportsComplete() {
 			const ingredientsUsed = [];
 			const ingredientMap = new Map();
 
-			dayEntry.snacksProduced?.forEach((snack: any) => {
+			dayEntry.snacksProduced?.forEach((snack: SnackProductionEntry) => {
 				// This would normally come from recipe data
 				const estimatedIngredients = [
 					{
@@ -186,7 +211,7 @@ export default function DayReportsComplete() {
 				);
 			}
 
-			if ((dayEntry.profitMargin ?? 0) < 40) {
+			if ((dayEntry.netProfit ?? 0) < 40) {
 				alerts.push("Profit margin below optimal range");
 				recommendations.push("Review ingredient costs and pricing strategy");
 			}

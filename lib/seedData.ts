@@ -2,6 +2,23 @@
 import { collection, addDoc, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
+export const clearAllData = async () => {
+	try {
+		await clearCollection("employees");
+		await clearCollection("products");
+		await clearCollection("snacks");
+		await clearCollection("productionEntries");
+		await clearCollection("notifications");
+		await clearCollection("expenses");
+		await clearCollection("suppliers");
+		await clearCollection("customers");
+		await clearCollection("sales");
+		return true;
+	} catch (error) {
+		console.error("Error clearing comprehensive data:", error);
+		return false;
+	}
+};
 export const seedFirebaseData = async () => {
 	try {
 		// Clear existing data

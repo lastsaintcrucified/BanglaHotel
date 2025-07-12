@@ -137,7 +137,10 @@ export const generateSystemNotifications = async () => {
 					read: false,
 					category: "inventory",
 					actionRequired: true,
-					relatedData: { productId: item.id, productName: item.name },
+					relatedData: {
+						productId: item.id ?? "unknown",
+						productName: item.name ?? "unknown",
+					},
 				});
 			} else {
 				notifications.push({
@@ -148,7 +151,10 @@ export const generateSystemNotifications = async () => {
 					read: false,
 					category: "inventory",
 					actionRequired: true,
-					relatedData: { productId: item.id, productName: item.name },
+					relatedData: {
+						productId: item.id ?? "unknown",
+						productName: item.name ?? "unknown",
+					},
 				});
 			}
 		}

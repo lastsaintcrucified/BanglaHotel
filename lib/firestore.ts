@@ -15,6 +15,47 @@ import {
 } from "@/app/components/DayReportsComplete";
 
 // Employee operations
+type Advance = {
+	amount: number;
+	date: string; // or Date if you want to parse it
+	reason: string;
+	repaid: boolean;
+};
+
+type Attendance = {
+	absent: number;
+	late: number;
+	overtime: number;
+	present: number;
+};
+
+type Leave = {
+	approved: boolean;
+	date: string; // or Date
+	days: number;
+	reason: string;
+};
+
+export type Employee = {
+	id?: string;
+	address: string;
+	advances: Advance[];
+	attendance: Attendance;
+	avatar: string;
+	bloodGroup: string;
+	email: string;
+	emergencyContact: string;
+	joinDate: string; // or Date
+	leaves: Leave[];
+	name: string;
+	nid: string;
+	performance: number;
+	phone: string;
+	position: string;
+	salary: number;
+	skills: string[];
+	totalLeaveAllowed: number;
+};
 export const addEmployee = async (employee: Employee) => {
 	try {
 		const docRef = await addDoc(collection(db, "employees"), {
@@ -27,19 +68,7 @@ export const addEmployee = async (employee: Employee) => {
 		throw error;
 	}
 };
-export type Employee = {
-	id: string;
-	name: string;
-	phone: any;
-	avatar: any;
-	position: any;
-	salary: any;
-	joinDate: any;
-	leaves: any[];
-	totalLeaveAllowed: any;
-	advances: any;
-	// add other fields if needed
-};
+
 export const getEmployees = async () => {
 	try {
 		const querySnapshot = await getDocs(collection(db, "employees"));
@@ -56,7 +85,7 @@ export const getEmployees = async () => {
 };
 
 // Product operations
-export const addProduct = async (product: any) => {
+export const addProduct = async (product: Product) => {
 	try {
 		const docRef = await addDoc(collection(db, "products"), {
 			...product,
@@ -70,13 +99,21 @@ export const addProduct = async (product: any) => {
 };
 
 export type Product = {
-	id: string;
+	id?: string; // Add this if it's from Firestore doc
+	batchNumber: string;
+	category: string;
+	currentStock: number;
+	estimatedWastagePercent: number;
+	expiryDate: string; // consider Date if parsing
+	initialStock: number;
+	lastUpdated: string; // consider Date if parsing
+	lowStockAlertAt: number;
+	maxStock: number;
 	name: string;
-	currentStock: any;
-	lowStockAlertAt: any;
-	initialStock: any;
-	unit: any;
-	estimatedWastagePercent: any;
+	pricePerUnit: number;
+	reorderLevel: number;
+	supplier: string;
+	unit: string;
 };
 export const getProducts = async () => {
 	try {
@@ -92,7 +129,7 @@ export const getProducts = async () => {
 };
 
 // Snack operations
-export const addSnack = async (snack: any) => {
+export const addSnack = async (snack: SnackProduced) => {
 	try {
 		const docRef = await addDoc(collection(db, "snacks"), {
 			...snack,
@@ -119,7 +156,7 @@ export const getSnacks = async () => {
 };
 
 // Production operations
-export const addProductionEntry = async (entry: any) => {
+export const addProductionEntry = async (entry: ProductionEntry) => {
 	try {
 		const docRef = await addDoc(collection(db, "productionEntries"), {
 			...entry,
@@ -163,11 +200,15 @@ export const getProductionEntries = async (
 
 // Expense operations
 export type Expense = {
-	id: string;
-	category: string;
-	subcategory: string;
+	id?: string; // Firestore document ID
+	invoiceNumber: string;
+	date: string; // "YYYY-MM-DD"
+	category: string; // e.g., "Ingredients"
+	subcategory: string; // e.g., "Raw Materials"
 	amount: number;
-	createdAt: any;
+	paymentMethod: "Cash" | "Bank" | "Mobile Payment" | string;
+	vendor: string;
+	description: string;
 };
 export const addExpense = async (expense: Expense) => {
 	try {
@@ -206,8 +247,18 @@ export const getExpenses = async (startDate?: string, endDate?: string) => {
 	}
 };
 
+export type Supplier = {
+	id?: string; // Firestore document ID
+	name: string;
+	category: string; // e.g., "Oils & Fats"
+	address: string;
+	contact: string;
+	email: string;
+	paymentTerms: string; // e.g., "45 days"
+	rating: number; // 1 to 5 scale
+};
 // Supplier operations
-export const addSupplier = async (supplier: any) => {
+export const addSupplier = async (supplier: Supplier) => {
 	try {
 		const docRef = await addDoc(collection(db, "suppliers"), {
 			...supplier,
@@ -229,9 +280,21 @@ export const getSuppliers = async () => {
 		throw error;
 	}
 };
-
+export type Customer = {
+	id?: string;
+	address: string;
+	createdAt: Date;
+	email: string;
+	lastOrderDate: string; // or Date if you prefer to parse it
+	loyaltyPoints: number;
+	name: string;
+	phone: string;
+	preferredItems: string[];
+	totalOrders: number;
+	totalSpent: number;
+};
 // Customer operations
-export const addCustomer = async (customer: any) => {
+export const addCustomer = async (customer: Customer) => {
 	try {
 		const docRef = await addDoc(collection(db, "customers"), {
 			...customer,
@@ -247,7 +310,7 @@ export const addCustomer = async (customer: any) => {
 export const getCustomers = async () => {
 	try {
 		const querySnapshot = await getDocs(collection(db, "customers"));
-		return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+		return querySnapshot.docs.map((doc) => ({ ...doc.data() }));
 	} catch (error) {
 		console.error("Error getting customers:", error);
 		throw error;
@@ -255,7 +318,25 @@ export const getCustomers = async () => {
 };
 
 // Sales operations
-export const addSale = async (sale: any) => {
+type OrderItem = {
+	name: string;
+	price: number;
+	quantity: number;
+};
+export type Sale = {
+	id?: string;
+	createdAt: Date;
+	customerType: string;
+	date: string; // or Date if you want to parse it
+	discount: number;
+	invoiceNumber: string;
+	items: OrderItem[];
+	paymentMethod: string;
+	tax: number;
+	time: string;
+	totalAmount: number;
+};
+export const addSale = async (sale: Sale) => {
 	try {
 		const docRef = await addDoc(collection(db, "sales"), {
 			...sale,
@@ -282,7 +363,7 @@ export const getSales = async (startDate?: string, endDate?: string) => {
 		}
 
 		const querySnapshot = await getDocs(q);
-		return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+		return querySnapshot.docs.map((doc) => ({ ...doc.data() }));
 	} catch (error) {
 		console.error("Error getting sales:", error);
 		throw error;

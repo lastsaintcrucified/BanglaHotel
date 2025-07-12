@@ -36,8 +36,10 @@ import {
 	Shield,
 	Palette,
 	DollarSign,
+	Loader,
 } from "lucide-react";
-import { seedFirebaseData } from "@/lib/seedData";
+import { clearAllData, seedFirebaseData } from "@/lib/seedData";
+import { toast } from "sonner";
 
 export default function Settings() {
 	const [settings, setSettings] = useState({
@@ -84,6 +86,21 @@ export default function Settings() {
 	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState("");
 
+	const handleClearData = async () => {
+		setLoading(true);
+		try {
+			const success = await clearAllData();
+			if (success) {
+				toast.success("Cleared data successfully!");
+			} else {
+				toast.error("Error clearing data. Please try again.");
+			}
+		} catch (error) {
+			toast.error("Error clearing data. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	};
 	const handleSave = async () => {
 		setLoading(true);
 		try {
@@ -114,7 +131,6 @@ export default function Settings() {
 		} finally {
 			setLoading(false);
 		}
-		setTimeout(() => setMessage(""), 5000);
 	};
 
 	return (
@@ -797,9 +813,16 @@ export default function Settings() {
 								variant='destructive'
 								className='w-full'
 								size='sm'
+								onClick={handleClearData}
 							>
-								<Trash2 className='h-4 w-4 mr-2' />
-								Clear All Data
+								{loading ? (
+									<Loader />
+								) : (
+									<>
+										<Trash2 className='h-4 w-4 mr-2' />
+										Clear All Data
+									</>
+								)}
 							</Button>
 						</CardContent>
 					</Card>
