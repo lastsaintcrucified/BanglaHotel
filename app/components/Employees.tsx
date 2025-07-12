@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
@@ -24,11 +25,28 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Calendar, DollarSign, Phone, Search } from "lucide-react";
-import { addEmployee, Employee, getEmployees } from "@/lib/firestore";
+import {
+	Plus,
+	Edit,
+	Calendar,
+	DollarSign,
+	Phone,
+	Search,
+	Loader,
+	Delete,
+	Trash,
+} from "lucide-react";
+import {
+	addEmployee,
+	deleteEmployeeById,
+	Employee,
+	getEmployees,
+	updateEmployeeById,
+} from "@/lib/firestore";
 import { useEffect } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { EditEmployeeDialog } from "./EditEmployee";
 
 export default function Employees() {
 	const [employees, setEmployees] = useState<Employee[]>([]);
@@ -64,6 +82,13 @@ export default function Employees() {
 		leaves: [],
 		advances: [],
 		attendance: {},
+	});
+
+	const [leaveData, setLeaveData] = useState({
+		date: "",
+		reason: "",
+		days: 1,
+		approved: false,
 	});
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,14 +150,7 @@ export default function Employees() {
 				email,
 				emergencyContact,
 				joinDate,
-				leaves: [
-					{
-						approved: false,
-						date: "",
-						days: 0,
-						reason: "",
-					},
-				],
+				leaves: [],
 				name,
 				nid,
 				performance,
@@ -175,11 +193,81 @@ export default function Employees() {
 		}
 	};
 
+	// update Employee
+	const handleUpdateEmployee = async (updatedEmployee: Partial<Employee>) => {
+		if (!selectedEmployee) return;
+		setLoading(true);
+
+		try {
+			await updateEmployeeById(selectedEmployee.id ?? "", updatedEmployee);
+			toast.success("Employee updated!");
+			await fetchEmployees();
+			// refresh list or update UI accordingly
+		} catch (err) {
+			console.error(err);
+			toast.error("Failed to update employee");
+		} finally {
+			setLoading(false);
+		}
+	};
+	// delete Employee
+	const handleDelete = async (id: string, employeeName: string) => {
+		const confirmed = window.confirm(
+			`Are you sure you want to delete employee "${employeeName}"? This action cannot be undone.`
+		);
+		console.log(confirmed);
+		if (!confirmed) return;
+		setLoading(true);
+
+		try {
+			await deleteEmployeeById(id);
+			toast.success("Employee deleted!");
+			await fetchEmployees();
+			// refresh list or update UI accordingly
+		} catch (err) {
+			console.error(err);
+			toast.error("Failed to delete employee");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleAddLeave = async (employee: Employee) => {
+		setLoading(true);
+		const updatedLeave = {
+			...leaveData,
+			approved: true, // default or set by admin later
+		};
+
+		try {
+			await updateEmployeeById(employee.id ?? "", {
+				leaves: [...(employee.leaves || []), updatedLeave],
+			});
+			toast.success("Leave added successfully!");
+			await fetchEmployees();
+			setLeaveData({
+				date: "",
+				reason: "",
+				days: 1,
+				approved: false,
+			});
+			setShowLeaveDialog(!showLeaveDialog);
+		} catch (err) {
+			console.error("Failed to update leave:", err);
+			toast.error("Failed to update leave:");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		fetchEmployees();
 	}, []);
 
-	const [selectedEmployee, setSelectedEmployee] = useState(null);
+	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+		null
+	);
+	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showAddEmployee, setShowAddEmployee] = useState(false);
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 	const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
@@ -203,6 +291,7 @@ export default function Employees() {
 						Manage your hotel staff and track their activities
 					</p>
 				</div>
+				{/* Edit/Update employee */}
 				<Dialog
 					open={showAddEmployee}
 					onOpenChange={setShowAddEmployee}
@@ -500,12 +589,36 @@ export default function Employees() {
 											)}
 										</div>
 									</div>
+									{/* Edit */}
 									<Button
 										variant='ghost'
 										size='icon'
+										onClick={() => {
+											setSelectedEmployee(employee);
+											setShowEditDialog(true);
+										}}
 									>
-										<Edit className='h-4 w-4' />
+										<Edit className='h-4 w-4 text-green-600 fill-gree-300' />
 									</Button>
+									<Button
+										variant='ghost'
+										size='icon'
+										onClick={() =>
+											handleDelete(employee.id ?? "", employee.name)
+										}
+									>
+										<Trash className='h-5 w-5 text-red-600 fill-orange-300' />
+									</Button>
+
+									{selectedEmployee && (
+										<EditEmployeeDialog
+											employee={selectedEmployee}
+											open={showEditDialog}
+											onOpenChange={setShowEditDialog}
+											onUpdate={handleUpdateEmployee}
+											loading={loading}
+										/>
+									)}
 								</div>
 							</CardHeader>
 							<CardContent className='space-y-4'>
@@ -526,12 +639,13 @@ export default function Employees() {
 								</div>
 
 								<div className='space-y-2'>
-									<div className='flex justify-between items-center'>
+									<div className='flex justify-between items-center cursor-pointer'>
 										<span className='text-sm text-gray-600'>Leaves Taken</span>
 										<Badge variant='outline'>
 											{employee.leaves.length}/{employee.totalLeaveAllowed}
 										</Badge>
 									</div>
+
 									<div className='flex justify-between items-center'>
 										<span className='text-sm text-gray-600'>
 											Total Advances
@@ -572,20 +686,71 @@ export default function Employees() {
 											</DialogHeader>
 											<div className='space-y-4'>
 												<div>
-													<Label htmlFor='leaveDate'>Leave Date</Label>
+													<Label
+														className='mb-2'
+														htmlFor='leaveDate'
+													>
+														Leave Date
+													</Label>
 													<Input
 														id='leaveDate'
 														type='date'
+														value={leaveData.date}
+														onChange={(e) =>
+															setLeaveData({
+																...leaveData,
+																date: e.target.value,
+															})
+														}
 													/>
 												</div>
+
 												<div>
-													<Label htmlFor='reason'>Reason</Label>
+													<Label
+														className='mb-2'
+														htmlFor='reason'
+													>
+														Reason
+													</Label>
 													<Textarea
 														id='reason'
 														placeholder='Enter reason for leave'
+														value={leaveData.reason}
+														onChange={(e) =>
+															setLeaveData({
+																...leaveData,
+																reason: e.target.value,
+															})
+														}
 													/>
 												</div>
-												<Button className='w-full'>Add Leave Record</Button>
+
+												<div>
+													<Label
+														className='mb-2'
+														htmlFor='days'
+													>
+														Leave Days
+													</Label>
+													<Input
+														id='days'
+														type='number'
+														value={leaveData.days}
+														onChange={(e) =>
+															setLeaveData({
+																...leaveData,
+																days: Number(e.target.value),
+															})
+														}
+													/>
+												</div>
+
+												<Button
+													className='w-full'
+													onClick={() => handleAddLeave(employee)}
+												>
+													{loading ? <Loader /> : "Add Leave Record"}
+												</Button>
 											</div>
 										</DialogContent>
 									</Dialog>

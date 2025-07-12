@@ -7,6 +7,10 @@ import {
 	where,
 	orderBy,
 	Timestamp,
+	doc,
+	getDoc,
+	updateDoc,
+	deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
@@ -74,13 +78,55 @@ export const getEmployees = async () => {
 		const querySnapshot = await getDocs(collection(db, "employees"));
 		return querySnapshot.docs.map((doc) => {
 			const data = doc.data() as Employee;
+			// console.log(doc.id);
 			return {
+				id: doc.id,
 				...data,
 			};
 		});
 	} catch (error) {
 		console.error("Error getting employees:", error);
 		throw error;
+	}
+};
+
+export const getEmployeeById = async (id: string) => {
+	try {
+		const docRef = doc(db, "employees", id); // "employees" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Employee;
+			console.log("Employee data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such employee!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching employee:", error);
+		return null;
+	}
+};
+
+export const updateEmployeeById = async (
+	id: string,
+	updatedData: Partial<Employee>
+) => {
+	try {
+		const employeeRef = doc(db, "employees", id); // "employees" is your collection
+		await updateDoc(employeeRef, updatedData);
+		console.log("Employee updated successfully");
+	} catch (error) {
+		console.error("Error updating employee:", error);
+	}
+};
+export const deleteEmployeeById = async (id: string) => {
+	try {
+		await deleteDoc(doc(db, "employees", id));
+		console.log("Employee deleted successfully");
+	} catch (error) {
+		console.error("Error deleting employee:", error);
 	}
 };
 
@@ -120,7 +166,7 @@ export const getProducts = async () => {
 		const querySnapshot = await getDocs(collection(db, "products"));
 		return querySnapshot.docs.map((doc) => {
 			const data = doc.data() as Product;
-			return { ...data };
+			return { id: doc.id, ...data };
 		});
 	} catch (error) {
 		console.error("Error getting products:", error);
@@ -128,6 +174,24 @@ export const getProducts = async () => {
 	}
 };
 
+export const getProductById = async (id: string) => {
+	try {
+		const docRef = doc(db, "products", id); // "products" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Product;
+			console.log("Product data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such product!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching product:", error);
+		return null;
+	}
+};
 // Snack operations
 export const addSnack = async (snack: SnackProduced) => {
 	try {
@@ -147,11 +211,30 @@ export const getSnacks = async () => {
 		const querySnapshot = await getDocs(collection(db, "snacks"));
 		return querySnapshot.docs.map((doc) => {
 			const data = doc.data() as SnackProduced;
-			return { ...data };
+			return { id: doc.id, ...data };
 		});
 	} catch (error) {
 		console.error("Error getting snacks:", error);
 		throw error;
+	}
+};
+
+export const getSnackById = async (id: string) => {
+	try {
+		const docRef = doc(db, "snacks", id); // "snacks" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as SnackProduced;
+			console.log("Snack data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such snack!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching snack:", error);
+		return null;
 	}
 };
 
@@ -189,12 +272,32 @@ export const getProductionEntries = async (
 		return querySnapshot.docs.map((doc) => {
 			const data = doc.data() as ProductionEntry;
 			return {
+				id: doc.id,
 				...data, // <- safe access
 			};
 		});
 	} catch (error) {
 		console.error("Error getting production entries:", error);
 		throw error;
+	}
+};
+
+export const getProductionEntryId = async (id: string) => {
+	try {
+		const docRef = doc(db, "productionEntries", id); // "productionEntries" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as ProductionEntry;
+			console.log("ProductionEntry data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such ProductionEntry!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching ProductionEntry:", error);
+		return null;
 	}
 };
 
@@ -239,11 +342,30 @@ export const getExpenses = async (startDate?: string, endDate?: string) => {
 		const querySnapshot = await getDocs(q);
 		return querySnapshot.docs.map((doc) => {
 			const data = doc.data() as Expense;
-			return { ...data };
+			return { id: doc.id, ...data };
 		});
 	} catch (error) {
 		console.error("Error getting expenses:", error);
 		throw error;
+	}
+};
+
+export const getExpenseId = async (id: string) => {
+	try {
+		const docRef = doc(db, "expenses", id); // "expenses" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Expense;
+			console.log("Expense data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such Expense!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching Expense:", error);
+		return null;
 	}
 };
 
@@ -280,6 +402,24 @@ export const getSuppliers = async () => {
 		throw error;
 	}
 };
+export const getSupplierId = async (id: string) => {
+	try {
+		const docRef = doc(db, "suppliers", id); // "suppliers" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Supplier;
+			console.log("Supplier data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such Supplier!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching Supplier:", error);
+		return null;
+	}
+};
 export type Customer = {
 	id?: string;
 	address: string;
@@ -310,10 +450,29 @@ export const addCustomer = async (customer: Customer) => {
 export const getCustomers = async () => {
 	try {
 		const querySnapshot = await getDocs(collection(db, "customers"));
-		return querySnapshot.docs.map((doc) => ({ ...doc.data() }));
+		return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 	} catch (error) {
 		console.error("Error getting customers:", error);
 		throw error;
+	}
+};
+
+export const getCustomerById = async (id: string) => {
+	try {
+		const docRef = doc(db, "customers", id); // "customers" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Customer;
+			console.log("Customer data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such Customer!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching Customer:", error);
+		return null;
 	}
 };
 
@@ -367,5 +526,24 @@ export const getSales = async (startDate?: string, endDate?: string) => {
 	} catch (error) {
 		console.error("Error getting sales:", error);
 		throw error;
+	}
+};
+
+export const getSaleById = async (id: string) => {
+	try {
+		const docRef = doc(db, "sales", id); // "sales" is the collection name
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = docSnap.data() as Sale;
+			console.log("Sale data:", data);
+			return { id: docSnap.id, ...data };
+		} else {
+			console.log("No such Sale!");
+			return null;
+		}
+	} catch (error) {
+		console.error("Error fetching Sale:", error);
+		return null;
 	}
 };

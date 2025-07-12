@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
 	collection,
@@ -179,29 +180,29 @@ export const generateSystemNotifications = async () => {
 		}
 
 		// Check for employee leave requests (simulated)
-		const employeesWithRecentLeaves = employees.filter(
-			(emp) =>
-				emp.leaves &&
-				emp.leaves.some((leave: any) => {
-					const leaveDate = new Date(leave.date);
-					const daysDiff =
-						(new Date().getTime() - leaveDate.getTime()) / (1000 * 3600 * 24);
-					return daysDiff <= 7 && !leave.approved;
-				})
-		);
+		// const employeesWithRecentLeaves = employees.filter(
+		// 	(emp) =>
+		// 		emp.leaves &&
+		// 		emp.leaves.some((leave: any) => {
+		// 			const leaveDate = new Date(leave.date);
+		// 			const daysDiff =
+		// 				(new Date().getTime() - leaveDate.getTime()) / (1000 * 3600 * 24);
+		// 			return daysDiff <= 7 && !leave.approved;
+		// 		})
+		// );
 
-		for (const employee of employeesWithRecentLeaves) {
-			notifications.push({
-				title: "Leave Request Pending",
-				message: `${employee.name} has submitted a leave request that requires approval.`,
-				type: "info" as const,
-				priority: "medium" as const,
-				read: false,
-				category: "hr",
-				actionRequired: true,
-				relatedData: { employeeId: employee.id, employeeName: employee.name },
-			});
-		}
+		// for (const employee of employeesWithRecentLeaves) {
+		// 	notifications.push({
+		// 		title: "Leave Request Pending",
+		// 		message: `${employee.name} has submitted a leave request that requires approval.`,
+		// 		type: "info" as const,
+		// 		priority: "medium" as const,
+		// 		read: false,
+		// 		category: "hr",
+		// 		actionRequired: true,
+		// 		relatedData: { employeeId: employee.id, employeeName: employee.name },
+		// 	});
+		// }
 
 		// Check for high wastage items
 		const highWastageItems = products.filter(
