@@ -132,7 +132,7 @@ export default function LoginPage() {
 						<Hotel className='h-8 w-8 text-white' />
 					</motion.div>
 					<h1 className='text-3xl font-bold text-gray-900 mb-2'>
-						Hotel Manager Pro
+						Banager-Hotel Manager
 					</h1>
 					<p className='text-gray-600'>
 						Complete management solution for your hotel business

@@ -35,6 +35,7 @@ import {
 	Loader,
 	Delete,
 	Trash,
+	CircleDollarSign,
 } from "lucide-react";
 import {
 	addEmployee,
@@ -47,6 +48,10 @@ import { useEffect } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { EditEmployeeDialog } from "./EditEmployee";
+import { ViewAdvancesDialog } from "./ViewAdvancesDialog";
+import { searchFirestoreDocs } from "@/lib/searchFirestoreDocs";
+import { useFirestoreSearch } from "@/hooks/useFirestoreSearch";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function Employees() {
 	const [employees, setEmployees] = useState<Employee[]>([]);
@@ -267,19 +272,29 @@ export default function Employees() {
 	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
 		null
 	);
+	const [selectedEmployeeForAdvance, setSelectedEmployeeForAdvance] =
+		useState<Employee | null>(null);
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showAddEmployee, setShowAddEmployee] = useState(false);
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 	const [showAdvanceDialog, setShowAdvanceDialog] = useState(false);
 
 	const [searchQuery, setSearchQuery] = useState("");
+	const { results, loadingFS, error, search } = useFirestoreSearch<Employee>({
+		collectionName: "employees",
+		searchFields: ["name", "phone"],
+	});
+	const debouncedQuery = useDebounce(searchQuery, 300);
 
-	const filteredEmployees = employees?.filter(
-		(employee) =>
-			employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			employee.phone.includes(searchQuery)
-	);
+	// ✅ Load all employees on mount
+	useEffect(() => {
+		search("");
+	}, []);
 
+	// ✅ Debounced search
+	useEffect(() => {
+		search(debouncedQuery);
+	}, [debouncedQuery]);
 	return (
 		<div className='space-y-6'>
 			<div className='flex justify-between items-center'>
@@ -549,7 +564,7 @@ export default function Employees() {
 			</div>
 
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-				{filteredEmployees?.map((employee) => (
+				{results?.map((employee) => (
 					<motion.div
 						key={employee.id}
 						initial={{ opacity: 0, y: 20 }}
@@ -598,7 +613,7 @@ export default function Employees() {
 											setShowEditDialog(true);
 										}}
 									>
-										<Edit className='h-4 w-4 text-green-600 fill-gree-300' />
+										<Edit className='h-4 w-4 text-green-600 ' />
 									</Button>
 									<Button
 										variant='ghost'
@@ -673,7 +688,7 @@ export default function Employees() {
 												size='sm'
 												className='flex-1 bg-transparent'
 											>
-												<Calendar className='h-4 w-4 mr-1' />
+												<Calendar className='h-4 w-4 mr-1 text-amber-600' />
 												Leave
 											</Button>
 										</DialogTrigger>
@@ -755,56 +770,27 @@ export default function Employees() {
 										</DialogContent>
 									</Dialog>
 
-									<Dialog
-										open={showAdvanceDialog}
-										onOpenChange={setShowAdvanceDialog}
+									{/* Advances */}
+									<Button
+										variant='outline'
+										size='sm'
+										className='flex-1 bg-transparent'
+										onClick={() => {
+											setSelectedEmployeeForAdvance(employee);
+											setShowAdvanceDialog(true);
+										}}
 									>
-										<DialogTrigger asChild>
-											<Button
-												variant='outline'
-												size='sm'
-												className='flex-1 bg-transparent'
-											>
-												<DollarSign className='h-4 w-4 mr-1' />
-												Advance
-											</Button>
-										</DialogTrigger>
-										<DialogContent>
-											<DialogHeader>
-												<DialogTitle>Add Salary Advance</DialogTitle>
-												<DialogDescription>
-													Record salary advance for {employee.name}
-												</DialogDescription>
-											</DialogHeader>
-											<div className='space-y-4'>
-												<div>
-													<Label htmlFor='advanceDate'>Date</Label>
-													<Input
-														id='advanceDate'
-														type='date'
-													/>
-												</div>
-												<div>
-													<Label htmlFor='amount'>Amount (Tk)</Label>
-													<Input
-														id='amount'
-														type='number'
-														placeholder='5000'
-													/>
-												</div>
-												<div>
-													<Label htmlFor='advanceReason'>
-														Reason (Optional)
-													</Label>
-													<Textarea
-														id='advanceReason'
-														placeholder='Enter reason for advance'
-													/>
-												</div>
-												<Button className='w-full'>Add Advance Record</Button>
-											</div>
-										</DialogContent>
-									</Dialog>
+										<CircleDollarSign className='h-4 w-4 text-purple-600 ' />
+										Advances
+									</Button>
+									{selectedEmployeeForAdvance && (
+										<ViewAdvancesDialog
+											employee={selectedEmployeeForAdvance}
+											open={showAdvanceDialog}
+											onOpenChange={setShowAdvanceDialog}
+											loading={loading}
+										/>
+									)}
 								</div>
 							</CardContent>
 						</Card>

@@ -6,7 +6,6 @@ import { useAuth } from "./components/AuthProvider";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Dashboard from "./components/Dashboard";
-import Employees from "./components/Employees";
 import Inventory from "./components/Inventory";
 import Snacks from "./components/Snacks";
 import Production from "./components/Production";
@@ -14,6 +13,7 @@ import Settings from "./components/Settings";
 import ReportsComplete from "./components/ReportsComplete";
 import DayReportsComplete from "./components/DayReportsComplete";
 import { Toaster } from "sonner";
+import Employees from "./components/Employee/Employees";
 
 export default function Home() {
 	const [activeTab, setActiveTab] = useState("dashboard");
