@@ -197,7 +197,7 @@ export default function Topbar({ setSidebarOpen }: TopbarProps) {
 				</div>
 
 				{/* Global Search */}
-				<div className='flex-1 max-w-md mx-4'>
+				{/* <div className='flex-1 max-w-md mx-4'>
 					<div className='relative'>
 						<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
 						<Input
@@ -207,7 +207,7 @@ export default function Topbar({ setSidebarOpen }: TopbarProps) {
 							className='pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors'
 						/>
 					</div>
-				</div>
+				</div> */}
 			</div>
 
 			<div className='flex items-center space-x-2'>

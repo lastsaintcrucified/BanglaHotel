@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -57,17 +58,17 @@ export default function Employees() {
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	const fetchEmployees = async () => {
-		try {
-			const employeeData = await getEmployees();
-			console.log(employeeData);
-			setEmployees(employeeData);
-		} catch (error) {
-			console.error("Error fetching employees:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+	// const fetchEmployees = async () => {
+	// 	try {
+	// 		const employeeData = await getEmployees();
+	// 		console.log(employeeData);
+	// 		setEmployees(employeeData);
+	// 	} catch (error) {
+	// 		console.error("Error fetching employees:", error);
+	// 	} finally {
+	// 		setLoading(false);
+	// 	}
+	// };
 
 	const [formData, setFormData] = useState({
 		name: "",
@@ -168,7 +169,7 @@ export default function Employees() {
 
 			await addEmployee(newEmployee);
 			toast.success("Employee added successfully!");
-			await fetchEmployees();
+			search("");
 
 			setFormData({
 				name: "",
@@ -206,7 +207,7 @@ export default function Employees() {
 		try {
 			await updateEmployeeById(selectedEmployee.id ?? "", updatedEmployee);
 			toast.success("Employee updated!");
-			await fetchEmployees();
+			search("");
 			// refresh list or update UI accordingly
 		} catch (err) {
 			console.error(err);
@@ -227,7 +228,7 @@ export default function Employees() {
 		try {
 			await deleteEmployeeById(id);
 			toast.success("Employee deleted!");
-			await fetchEmployees();
+			search("");
 			// refresh list or update UI accordingly
 		} catch (err) {
 			console.error(err);
@@ -249,7 +250,7 @@ export default function Employees() {
 				leaves: [...(employee.leaves || []), updatedLeave],
 			});
 			toast.success("Leave added successfully!");
-			await fetchEmployees();
+			search("");
 			setLeaveData({
 				date: "",
 				reason: "",
@@ -265,9 +266,9 @@ export default function Employees() {
 		}
 	};
 
-	useEffect(() => {
-		fetchEmployees();
-	}, []);
+	// useEffect(() => {
+	// 	fetchEmployees();
+	// }, []);
 
 	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
 		null

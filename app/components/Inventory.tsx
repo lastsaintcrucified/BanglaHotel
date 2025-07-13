@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -28,37 +30,121 @@ import {
 	AlertTriangle,
 	TrendingDown,
 	Search,
+	Loader,
 } from "lucide-react";
-import { getProducts, Product } from "@/lib/firestore";
+import { addProduct, getProducts, Product } from "@/lib/firestore";
 import { useEffect } from "react";
+import { useFirestoreSearch } from "@/hooks/useFirestoreSearch";
+import { useDebounce } from "@/hooks/useDebounce";
+import { toast } from "sonner";
 
 export default function Inventory() {
 	const [products, setProducts] = useState<Product[]>([]);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		const fetchProducts = async () => {
-			try {
-				const productData = await getProducts();
-				setProducts(productData);
-			} catch (error) {
-				console.error("Error fetching products:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-		fetchProducts();
-	}, []);
-
+	const [newProduct, setNewProduct] = useState<Partial<Product>>({
+		name: "",
+		unit: "",
+		initialStock: 0,
+		currentStock: 0,
+		lowStockAlertAt: 0,
+		estimatedWastagePercent: 0,
+		category: "",
+		pricePerUnit: 0,
+		supplier: "",
+		expiryDate: "",
+		batchNumber: "",
+		maxStock: 0,
+		reorderLevel: 0,
+		lastUpdated: new Date().toISOString(),
+	});
+	const [loading, setLoading] = useState(false);
 	const [showAddProduct, setShowAddProduct] = useState(false);
 	const [showAddStock, setShowAddStock] = useState(false);
 	const [showWastage, setShowWastage] = useState(false);
 	const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
+	const { results, loadingFS, error, search } = useFirestoreSearch<Product>({
+		collectionName: "products",
+		searchFields: ["name", "category", "supplier"],
+	});
 
-	const filteredProducts = products.filter((product) =>
-		product.name.toLowerCase().includes(searchQuery.toLowerCase())
-	);
+	// const fetchProducts = async () => {
+	// 	try {
+	// 		const productData = await getProducts();
+	// 		setProducts(productData);
+	// 	} catch (error) {
+	// 		console.error("Error fetching products:", error);
+	// 	} finally {
+	// 		setLoading(false);
+	// 	}
+	// };
+	// useEffect(() => {
+	// 	fetchProducts();
+	// }, []);
+	const debouncedQuery = useDebounce(searchQuery, 300);
+
+	// ✅ Load all employees on mount
+	useEffect(() => {
+		search("");
+	}, []);
+
+	// ✅ Debounced search
+	useEffect(() => {
+		search(debouncedQuery);
+	}, [debouncedQuery]);
+
+	const handleAddProduct = async () => {
+		if (
+			!newProduct.name ||
+			!newProduct.unit ||
+			!newProduct.initialStock ||
+			!newProduct.currentStock ||
+			!newProduct.lowStockAlertAt ||
+			!newProduct.category ||
+			!newProduct.batchNumber ||
+			!newProduct.estimatedWastagePercent ||
+			!newProduct.expiryDate ||
+			!newProduct.maxStock ||
+			!newProduct.pricePerUnit ||
+			!newProduct.supplier ||
+			!newProduct.reorderLevel
+		) {
+			toast.error("Need to fill up ll filds");
+			return;
+		}
+		setLoading(true);
+		try {
+			await addProduct({
+				...newProduct,
+				currentStock: newProduct.initialStock ?? 0,
+				lastUpdated: new Date().toISOString(),
+			} as Product);
+
+			toast.success("Product added succesfully!");
+			search("");
+			setNewProduct({
+				name: "",
+				unit: "",
+				initialStock: 0,
+				currentStock: 0,
+				lowStockAlertAt: 0,
+				estimatedWastagePercent: 0,
+				category: "",
+				pricePerUnit: 0,
+				supplier: "",
+				expiryDate: "",
+				batchNumber: "",
+				maxStock: 0,
+				reorderLevel: 0,
+				lastUpdated: new Date().toISOString(),
+			});
+			setShowAddProduct(!showAddProduct);
+		} catch (err) {
+			console.error("Error adding product", err);
+			toast.error("Error adding product");
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	const getStockStatus = (product: Product) => {
 		if (product.currentStock === 0)
@@ -93,7 +179,7 @@ export default function Inventory() {
 							Add Product
 						</Button>
 					</DialogTrigger>
-					<DialogContent>
+					<DialogContent className='overflow-y-scroll h-full'>
 						<DialogHeader>
 							<DialogTitle>Add New Product</DialogTitle>
 							<DialogDescription>
@@ -102,44 +188,250 @@ export default function Inventory() {
 						</DialogHeader>
 						<div className='space-y-4'>
 							<div>
-								<Label htmlFor='productName'>Product Name</Label>
+								<Label
+									className='mb-2'
+									htmlFor='productName'
+								>
+									Product Name
+								</Label>
 								<Input
 									id='productName'
 									placeholder='e.g., Flour, Sugar, Oil'
+									value={newProduct.name}
+									onChange={(e) =>
+										setNewProduct({ ...newProduct, name: e.target.value })
+									}
 								/>
 							</div>
 							<div>
-								<Label htmlFor='unit'>Unit</Label>
+								<Label
+									className='mb-2'
+									htmlFor='unit'
+								>
+									Unit
+								</Label>
 								<Input
 									id='unit'
-									placeholder='e.g., kg, L, g'
+									placeholder='e.g. kg, L, g'
+									value={newProduct.unit}
+									onChange={(e) =>
+										setNewProduct({ ...newProduct, unit: e.target.value })
+									}
 								/>
 							</div>
 							<div>
-								<Label htmlFor='initialStock'>Initial Stock</Label>
+								<Label
+									className='mb-2'
+									htmlFor='initialStock'
+								>
+									Initial Stock ({newProduct.unit})
+								</Label>
 								<Input
 									id='initialStock'
 									type='number'
 									placeholder='50'
+									value={newProduct.initialStock}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											initialStock: Number(e.target.value),
+										})
+									}
 								/>
 							</div>
 							<div>
-								<Label htmlFor='alertLevel'>Low Stock Alert Level</Label>
+								<Label
+									className='mb-2'
+									htmlFor='currentStock'
+								>
+									Current Stock ({newProduct.unit})
+								</Label>
 								<Input
-									id='alertLevel'
+									id='currentStock'
+									type='number'
+									placeholder='50'
+									value={newProduct.currentStock}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											currentStock: Number(e.target.value),
+										})
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='lowStockAlertAt'
+								>
+									Low Stock Alert Level ({newProduct.unit})
+								</Label>
+								<Input
+									id='lowStockAlertAt'
 									type='number'
 									placeholder='10'
+									value={newProduct.lowStockAlertAt}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											lowStockAlertAt: Number(e.target.value),
+										})
+									}
 								/>
 							</div>
 							<div>
-								<Label htmlFor='wastage'>Estimated Wastage %</Label>
+								<Label
+									className='mb-2'
+									htmlFor='estimatedWastagePercent'
+								>
+									Estimated Wastage (0-100)%
+								</Label>
 								<Input
-									id='wastage'
+									id='estimatedWastagePercent'
 									type='number'
 									placeholder='2'
+									value={newProduct.estimatedWastagePercent}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											estimatedWastagePercent: Number(e.target.value),
+										})
+									}
 								/>
 							</div>
-							<Button className='w-full'>Add Product</Button>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='category'
+								>
+									Product Category
+								</Label>
+								<Input
+									id='category'
+									placeholder='e.g., Spices, Vegs, Non-veg, Dairy, Carbs'
+									value={newProduct.category}
+									onChange={(e) =>
+										setNewProduct({ ...newProduct, category: e.target.value })
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='pricePerUnit'
+								>
+									Price per unit ({newProduct.unit})
+								</Label>
+								<Input
+									id='pricePerUnit'
+									type='number'
+									placeholder='2'
+									value={newProduct.pricePerUnit}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											pricePerUnit: Number(e.target.value),
+										})
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='supplier'
+								>
+									Supplier
+								</Label>
+								<Input
+									id='supplier'
+									placeholder='xyz Ltd.'
+									value={newProduct.supplier}
+									onChange={(e) =>
+										setNewProduct({ ...newProduct, supplier: e.target.value })
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='expiryDate'
+								>
+									Expiry Date:
+								</Label>
+								<Input
+									id='expiryDate'
+									type='date'
+									value={newProduct.expiryDate}
+									onChange={(e) =>
+										setNewProduct({ ...newProduct, expiryDate: e.target.value })
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='batchNumber'
+								>
+									Batch no.
+								</Label>
+								<Input
+									id='batchNumber'
+									placeholder='e.g. X-345345'
+									value={newProduct.batchNumber}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											batchNumber: e.target.value,
+										})
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='maxStock'
+								>
+									Maximum Stock (kg)
+								</Label>
+								<Input
+									id='maxStock'
+									type='number'
+									placeholder='2'
+									value={newProduct.maxStock}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											maxStock: Number(e.target.value),
+										})
+									}
+								/>
+							</div>
+							<div>
+								<Label
+									className='mb-2'
+									htmlFor='reorderLevel'
+								>
+									Re-order Level(1-10)
+								</Label>
+								<Input
+									id='reorderLevel'
+									type='number'
+									placeholder='2'
+									value={newProduct.reorderLevel}
+									onChange={(e) =>
+										setNewProduct({
+											...newProduct,
+											reorderLevel: Number(e.target.value),
+										})
+									}
+								/>
+							</div>
+							<Button
+								className='w-full'
+								onClick={handleAddProduct}
+							>
+								{loading ? <Loader /> : "Add Product"}
+							</Button>
 						</div>
 					</DialogContent>
 				</Dialog>
@@ -151,7 +443,7 @@ export default function Inventory() {
 					<div className='relative'>
 						<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
 						<Input
-							placeholder='Search products...'
+							placeholder='Search products by name or category or supplier name...'
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className='pl-10'
@@ -162,9 +454,9 @@ export default function Inventory() {
 
 			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 				{loading ? (
-					<div>Loading...</div>
+					<Loader className='place-self-center h-10 w-10' />
 				) : (
-					filteredProducts.map((product) => {
+					results.map((product) => {
 						const stockStatus = getStockStatus(product);
 						const stockPercentage = getStockPercentage(product);
 

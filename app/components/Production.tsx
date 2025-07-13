@@ -76,7 +76,7 @@ export default function Production() {
 
 	const calculateTotalRevenue = (productions: any) => {
 		return productions.reduce((total: any, item: any) => {
-			const snack = snacks.find((s) => s.snackName === item.snackName);
+			const snack = snacks.find((s) => s.name === item.snackName);
 			return total + (snack ? snack.sellingPrice * item.quantity : 0);
 		}, 0);
 	};
@@ -151,10 +151,10 @@ export default function Production() {
 												<option value=''>Select snack</option>
 												{snacks.map((snack) => (
 													<option
-														key={snack.snackName}
-														value={snack.snackName}
+														key={snack.name}
+														value={snack.name}
 													>
-														{snack.snackName} (Tk{snack.sellingPrice})
+														{snack.name} (Tk{snack.sellingPrice})
 													</option>
 												))}
 											</select>
