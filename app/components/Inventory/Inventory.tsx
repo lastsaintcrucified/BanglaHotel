@@ -31,12 +31,21 @@ import {
 	TrendingDown,
 	Search,
 	Loader,
+	Edit,
+	Trash,
 } from "lucide-react";
-import { addProduct, getProducts, Product } from "@/lib/firestore";
+import {
+	addProduct,
+	deleteProduct,
+	getProducts,
+	Product,
+	updateProduct,
+} from "@/lib/firestore";
 import { useEffect } from "react";
 import { useFirestoreSearch } from "@/hooks/useFirestoreSearch";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
+import { EditProductDialog } from "./EditInventory";
 
 export default function Inventory() {
 	const [products, setProducts] = useState<Product[]>([]);
@@ -66,6 +75,7 @@ export default function Inventory() {
 		collectionName: "products",
 		searchFields: ["name", "category", "supplier"],
 	});
+	const [showEditDialog, setShowEditDialog] = useState(false);
 
 	// const fetchProducts = async () => {
 	// 	try {
@@ -141,6 +151,45 @@ export default function Inventory() {
 		} catch (err) {
 			console.error("Error adding product", err);
 			toast.error("Error adding product");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// update Product
+	const handleUpdateProduct = async (updatedProduct: Partial<Product>) => {
+		if (!selectedProduct) return;
+		setLoading(true);
+
+		try {
+			await updateProduct(selectedProduct.id ?? "", updatedProduct);
+			toast.success("Product updated!");
+			search("");
+			// refresh list or update UI accordingly
+		} catch (err) {
+			console.error(err);
+			toast.error("Failed to update product");
+		} finally {
+			setLoading(false);
+		}
+	};
+	// delete Product
+	const handleDelete = async (id: string, productName: string) => {
+		const confirmed = window.confirm(
+			`Are you sure you want to delete product "${productName}"? This action cannot be undone.`
+		);
+		console.log(confirmed);
+		if (!confirmed) return;
+		setLoading(true);
+
+		try {
+			await deleteProduct(id);
+			toast.success("Product deleted!");
+			search("");
+			// refresh list or update UI accordingly
+		} catch (err) {
+			console.error(err);
+			toast.error("Failed to delete product");
 		} finally {
 			setLoading(false);
 		}
@@ -480,6 +529,36 @@ export default function Inventory() {
 											<Badge variant={stockStatus.color}>
 												{stockStatus.status}
 											</Badge>
+											<div className='flex flex-row justify-end items-center -mr-2'>
+												<Button
+													variant='ghost'
+													size='sm'
+													onClick={() => {
+														setSelectedProduct(product);
+														setShowEditDialog(true);
+													}}
+												>
+													<Edit className='h-4 w-4 text-green-600 ' />
+												</Button>
+												<Button
+													variant='ghost'
+													size='sm'
+													onClick={() =>
+														handleDelete(product.id ?? "", product.name)
+													}
+												>
+													<Trash className='h-5 w-5 text-red-600 fill-orange-300' />
+												</Button>
+											</div>
+											{selectedProduct && (
+												<EditProductDialog
+													product={selectedProduct}
+													open={showEditDialog}
+													onOpenChange={setShowEditDialog}
+													onUpdate={handleUpdateProduct}
+													loading={loading}
+												/>
+											)}
 										</div>
 									</CardHeader>
 									<CardContent className='space-y-4'>

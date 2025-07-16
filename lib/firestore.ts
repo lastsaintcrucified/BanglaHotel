@@ -131,19 +131,6 @@ export const deleteEmployeeById = async (id: string) => {
 };
 
 // Product operations
-export const addProduct = async (product: Product) => {
-	try {
-		const docRef = await addDoc(collection(db, "products"), {
-			...product,
-			createdAt: Timestamp.now(),
-		});
-		return docRef.id;
-	} catch (error) {
-		console.error("Error adding product:", error);
-		throw error;
-	}
-};
-
 export type Product = {
 	id?: string; // Add this if it's from Firestore doc
 	batchNumber: string;
@@ -161,6 +148,19 @@ export type Product = {
 	supplier: string;
 	unit: string;
 };
+export const addProduct = async (product: Product) => {
+	try {
+		const docRef = await addDoc(collection(db, "products"), {
+			...product,
+			createdAt: Timestamp.now(),
+		});
+		return docRef.id;
+	} catch (error) {
+		console.error("Error adding product:", error);
+		throw error;
+	}
+};
+
 export const getProducts = async () => {
 	try {
 		const querySnapshot = await getDocs(collection(db, "products"));
@@ -191,6 +191,18 @@ export const getProductById = async (id: string) => {
 		console.error("Error fetching product:", error);
 		return null;
 	}
+};
+export const updateProduct = async (
+	id: string,
+	updatedProduct: Partial<Product>
+) => {
+	const ref = doc(db, "products", id);
+	return await updateDoc(ref, updatedProduct);
+};
+
+export const deleteProduct = async (id: string) => {
+	const ref = doc(db, "products", id);
+	return await deleteDoc(ref);
 };
 // Snack operations
 export const addSnack = async (snack: SnackProduced) => {
